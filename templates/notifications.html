@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Notifications - EduManage{% endblock %}
+{% block content %}
+<div class="container page">
+  <h1>Notifications</h1>
+
+  {% if notifications %}
+  <form method="post" style="margin: 0.75rem 0 1.25rem;">
+    <button type="submit" class="btn btn-secondary btn-sm">Mark all as read</button>
+  </form>
+  {% endif %}
+
+  {% if not notifications %}
+    <p>No notifications yet.</p>
+  {% else %}
+    <div class="bookings-list">
+      {% for n in notifications %}
+        <div class="booking-card" style="opacity: {{ '0.75' if n.is_read else '1' }};">
+          <div class="booking-header">
+            <strong>{{ 'New' if not n.is_read else 'Read' }}</strong>
+            <span class="muted">{{ n.created_at.strftime('%d %b %Y %H:%M') if n.created_at else '' }}</span>
+          </div>
+          <p style="margin-top: 0.5rem;">{{ n.message }}</p>
+        </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+</div>
+{% endblock %}
+

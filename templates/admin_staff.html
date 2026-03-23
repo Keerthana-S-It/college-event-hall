@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Staff Users - Admin{% endblock %}
+{% block content %}
+<div class="container page">
+    <h1>Staff Users</h1>
+    <p class="lead">Create login accounts for staff so they can book halls.</p>
+
+    <section class="card" style="margin-bottom: 2rem;">
+        <h2>Add New Staff</h2>
+        <form method="post" class="form-grid">
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="username">Username (for login)<span class="required">*</span></label>
+                    <input type="text" id="username" name="username" required
+                           placeholder="Enter login username">
+                </div>
+                <div class="form-group">
+                    <label for="full_name">Faculty Name<span class="required">*</span></label>
+                    <input type="text" id="full_name" name="full_name" required
+                           placeholder="Enter faculty name">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="password">Password<span class="required">*</span></label>
+                    <input type="password" id="password" name="password" required
+                           placeholder="Set a password for this staff" autocomplete="new-password">
+                </div>
+            </div>
+            <button type="submit" class="btn btn-primary">Create Staff</button>
+        </form>
+    </section>
+
+    <section>
+        <h2>Existing Staff</h2>
+        {% if staff_users %}
+        <form method="post" action="{{ url_for('admin.delete_all_staff') }}" style="margin-bottom: 1rem;"
+              onsubmit="return confirm('Remove all staff? Their bookings will be reassigned to admin. This cannot be undone.');">
+            <button type="submit" class="btn btn-danger">Delete All Staff</button>
+        </form>
+        {% endif %}
+        {% if not staff_users %}
+        <p>No staff have been created yet.</p>
+        {% else %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Faculty Name</th>
+                    <th>Username</th>
+                    <th>Created On</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in staff_users %}
+                <tr>
+                    <td>{{ u.full_name or u.username }}</td>
+                    <td>{{ u.username }}</td>
+                    <td>{{ u.created_at.strftime('%d-%m-%Y') if u.created_at else '-' }}</td>
+                    <td>
+                        <details style="margin-bottom: 0.5rem;">
+                            <summary class="btn btn-secondary btn-sm" style="display: inline-block; cursor: pointer;">Edit</summary>
+                            <form method="post" action="{{ url_for('admin.edit_staff', user_id=u.id) }}" style="margin-top: 0.75rem;">
+                                <div class="form-row" style="gap: 0.5rem; flex-wrap: wrap;">
+                                    <input type="text" name="username" value="{{ u.username }}" required
+                                           placeholder="Username" style="min-width: 180px;">
+                                    <input type="text" name="full_name" value="{{ u.full_name or u.username }}" required
+                                           placeholder="Faculty name" style="min-width: 220px;">
+                                    <input type="password" name="password" placeholder="New password (leave empty to keep)"
+                                           autocomplete="new-password" style="min-width: 240px;">
+                                    <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                                </div>
+                            </form>
+                        </details>
+                        <form method="post" action="{{ url_for('admin.delete_staff', user_id=u.id) }}"
+                              onsubmit="return confirm('Delete this staff login? This cannot be undone.');"
+                              style="display: inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% endif %}
+    </section>
+</div>
+{% endblock %}
+

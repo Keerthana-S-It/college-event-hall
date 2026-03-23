@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}All Bookings - EduManage{% endblock %}
+{% block content %}
+<div class="container page">
+    <h1>All Bookings</h1>
+    {% if not bookings %}
+    <p>No bookings yet. <a href="{{ url_for('booking.dashboard') }}">Book a hall</a> from the Dashboard — your confirmed bookings will appear here.</p>
+    {% else %}
+    <div class="bookings-list">
+        {% for b in bookings %}
+        <div class="booking-card">
+            <div class="booking-header">
+                <strong>{{ b.hall.name }}</strong>
+                <span class="booking-date">
+                    Event: {{ b.booking_date.strftime('%d %b %Y') }} → {{ b.event_end_date.strftime('%d %b %Y') }}
+                    ({{ b.num_days }} day{{ 's' if b.num_days != 1 else '' }})
+                </span>
+                <span class="badge badge-{{ b.status|lower }}">
+                    {{ b.status|capitalize }}
+                </span>
+            </div>
+            <p class="muted"><strong>Booked on:</strong> {{ b.created_at_local.strftime('%d %b %Y') if b.created_at_local else '-' }}</p>
+            <p><strong>Department:</strong> {{ b.department }}</p>
+            <p><strong>Purpose:</strong> {{ b.purpose }}</p>
+            <p>
+                Chairs: {{ b.chairs_required }} |
+                Guest chairs: {{ b.guest_chairs }} |
+                Faculties: {{ b.faculties_count }} |
+                Audio: {{ 'Yes' if b.audio_system else 'No' }}{% if b.audio_system %} (Mics: {{ b.microphones }}, Types: {{ (b.mic_types or '')|replace('_', ' ') }}){% endif %} |
+                Photography: {{ 'Yes' if b.photography else 'No' }} |
+                Podium: {{ 'Yes' if b.podium_required else 'No' }}
+            </p>
+            <div class="cancel-form">
+                <a href="{{ url_for('booking.print_booking', booking_id=b.id) }}" target="_blank" class="btn btn-secondary btn-sm">Print</a>
+                {% if b.status in ['pending', 'approved'] %}
+                <button type="button" class="btn btn-danger btn-sm btn-cancel-trigger" data-booking-id="{{ b.id }}">Cancel booking</button>
+                {% endif %}
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+<div id="cancel-modal" class="popup hidden">
+    <div class="popup-content">
+        <h3>Cancel Booking</h3>
+        <p>Please provide a reason for cancellation (required).</p>
+        <form method="post" id="cancel-form" action="">
+            <div class="form-group">
+                <label for="cancellation_reason">Reason for cancellation <span class="required">*</span></label>
+                <textarea id="cancellation_reason" name="cancellation_reason" rows="4" required placeholder="e.g. Event postponed, venue change..."></textarea>
+            </div>
+            <div class="form-actions" style="margin-top: 1rem;">
+                <button type="submit" class="btn btn-danger">Confirm Cancellation</button>
+                <button type="button" class="btn btn-secondary" id="btn-cancel-modal-close">Close</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script>
+(function() {
+    var modal = document.getElementById('cancel-modal');
+    var form = document.getElementById('cancel-form');
+    var reasonEl = document.getElementById('cancellation_reason');
+    document.querySelectorAll('.btn-cancel-trigger').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var id = this.getAttribute('data-booking-id');
+            form.action = '{{ url_for("booking.cancel_booking", booking_id=0) }}'.replace('/0', '/' + id);
+            reasonEl.value = '';
+            modal.classList.remove('hidden');
+        });
+    });
+    document.getElementById('btn-cancel-modal-close').addEventListener('click', function() {
+        modal.classList.add('hidden');
+    });
+    modal.addEventListener('click', function(e) {
+        if (e.target === modal) modal.classList.add('hidden');
+    });
+    form.addEventListener('submit', function() {
+        return confirm('Cancel this booking? It will be removed from the list.');
+    });
+})();
+</script>
+{% endblock %}

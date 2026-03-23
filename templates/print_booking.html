@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Booking Print - {{ booking.hall.name }}</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 2cm;
+        }
+        body {
+            font-family: "Times New Roman", serif;
+            background: #ffffff;
+            color: #000000;
+        }
+        .page {
+            max-width: 18cm;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            font-size: 20px;
+            margin-bottom: 0.5cm;
+            text-transform: uppercase;
+        }
+        h2 {
+            text-align: center;
+            font-size: 16px;
+            margin-top: 0;
+            margin-bottom: 1cm;
+        }
+        .row {
+            margin-bottom: 0.35cm;
+            font-size: 14px;
+        }
+        .label {
+            display: inline-block;
+            min-width: 4.5cm;
+            font-weight: bold;
+        }
+        .value {
+            display: inline-block;
+            min-width: 10cm;
+            border-bottom: 1px dotted #000;
+            padding: 0 0 2px 2px;
+        }
+        .multiline {
+            min-height: 1.2cm;
+            vertical-align: top;
+        }
+        .section-title {
+            margin-top: 0.8cm;
+            margin-bottom: 0.4cm;
+            font-weight: bold;
+            text-decoration: underline;
+        }
+        .sign-row {
+            margin-top: 1.5cm;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        .sign-box {
+            width: 6cm;
+            text-align: center;
+        }
+        .sign-line {
+            border-bottom: 1px solid #000;
+            height: 1.2cm;
+            margin-bottom: 0.2cm;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="no-print" style="text-align:right; margin: 0.5cm 2cm 0 0;">
+        <button onclick="window.print()">Print</button>
+    </div>
+    <div class="page">
+        <h1>RESERVATION SLIP</h1>
+        <h2>(Event Hall Booking - {{ booking.hall.name }})</h2>
+
+        <div class="row">
+            <span class="label">Booked on</span>
+            <span class="value">
+                {{ booking.created_at_local.strftime('%d-%m-%Y') if booking.created_at_local else '' }}
+            </span>
+        </div>
+        <br>
+
+        <div class="row">
+            <span class="label">1. Name of Applicant</span>
+            <span class="value">{{ booking.user.username if booking.user else '' }}</span>
+        </div>
+        <div class="row">
+            <span class="label">2. Department / Class</span>
+            <span class="value">{{ booking.department }}</span>
+        </div>
+        <div class="row">
+            <span class="label">3. Purpose of Booking</span>
+            <span class="value multiline">{{ booking.purpose }}</span>
+        </div>
+        <div class="row">
+            <span class="label">4. Hall</span>
+            <span class="value">{{ booking.hall.name }}</span>
+        </div>
+        <div class="row">
+            <span class="label">5. Dates of Event</span>
+            <span class="value">
+                From {{ booking.booking_date.strftime('%d-%m-%Y') }}
+                to {{ booking.event_end_date.strftime('%d-%m-%Y') }}
+                ({{ booking.num_days }} day{{ 's' if booking.num_days != 1 else '' }})
+            </span>
+        </div>
+        <div class="row">
+            <span class="label">6. No. of Students</span>
+            <span class="value">{{ booking.chairs_required }}</span>
+        </div>
+        <div class="row">
+            <span class="label">7. No. of Faculties</span>
+            <span class="value">{{ booking.faculties_count }}</span>
+        </div>
+        <div class="row">
+            <span class="label">8. Guest Chairs</span>
+            <span class="value">{{ booking.guest_chairs }}</span>
+        </div>
+
+        <div class="section-title">Facilities Required</div>
+
+        <div class="row">
+            <span class="label">Audio System</span>
+            <span class="value">
+                {{ 'Yes' if booking.audio_system else 'No' }}
+                {% if booking.audio_system %}
+                    &nbsp; (Mics: {{ booking.microphones }}, Types: {{ (booking.mic_types or '')|replace('_', ' ') }})
+                {% endif %}
+            </span>
+        </div>
+        <div class="row">
+            <span class="label">Photography</span>
+            <span class="value">{{ 'Yes' if booking.photography else 'No' }}</span>
+        </div>
+        <div class="row">
+            <span class="label">Podium</span>
+            <span class="value">{{ 'Yes' if booking.podium_required else 'No' }}</span>
+        </div>
+
+        <div class="sign-row">
+            <div class="sign-box">
+                <div class="sign-line"></div>
+                Signature of Coordinator / Director / HoD
+            </div>
+            <div class="sign-box">
+                <div class="sign-line"></div>
+                Signature of Principal
+            </div>
+        </div>
+    </div>
+</body>
+</html>
+

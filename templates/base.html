@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Dr.GRDCS{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <div class="container">
+            <a href="{{ url_for('booking.dashboard') }}" class="logo">Dr.GRDCS</a>
+            <nav>
+                {% if session.get('user_id') %}
+                <a href="{{ url_for('booking.dashboard') }}">Dashboard</a>
+                <a href="{{ url_for('booking.my_bookings') }}">All Bookings</a>
+                {% if session.get('role') != 'admin' %}
+                <a href="{{ url_for('booking.notifications') }}">Notifications</a>
+                {% endif %}
+                {% if session.get('role') == 'admin' %}
+                <a href="{{ url_for('admin.pending_approvals') }}">Pending</a>
+                <a href="{{ url_for('admin.reports') }}">Reports</a>
+                <a href="{{ url_for('admin.manage_staff') }}">Create Staff</a>
+                {% endif %}
+                <a href="{{ url_for('auth.logout') }}">Logout ({{ session.get('username') }})</a>
+                {% endif %}
+            </nav>
+        </div>
+    </header>
+    <main class="main">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+        <div class="flash-messages">
+            {% for category, msg in messages %}
+            <div class="flash flash-{{ category }}">{{ msg }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        {% block content %}{% endblock %}
+    </main>
+    <footer class="footer">
+        <div class="container">Event Hall Booking &copy; Dr.GRDCS</div>
+    </footer>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Cancellation History - Admin{% endblock %}
+{% block content %}
+<div class="container page">
+    <h1>Cancellation History</h1>
+    <p class="lead"><a href="{{ url_for('admin.reports') }}">← Back to Reports</a></p>
+    {% if not bookings %}
+    <p>No cancelled bookings.</p>
+    {% else %}
+    <table class="report-table" style="width:100%; border-collapse: collapse; margin-top: 1rem;">
+        <thead>
+            <tr style="background: var(--surface2);">
+                <th style="padding: 0.5rem; text-align: left;">S.No</th>
+                <th style="padding: 0.5rem; text-align: left;">Event (From → To)</th>
+                <th style="padding: 0.5rem; text-align: left;">Hall</th>
+                <th style="padding: 0.5rem; text-align: left;">Faculty Name</th>
+                <th style="padding: 0.5rem; text-align: left;">Booked On</th>
+                <th style="padding: 0.5rem; text-align: left;">Cancelled at</th>
+                <th style="padding: 0.5rem; text-align: left;">Reason</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for b in bookings %}
+            <tr>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ loop.index }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ b.booking_date.strftime('%d-%m-%Y') if b.booking_date else '-' }} → {{ b.event_end_date.strftime('%d-%m-%Y') if b.event_end_date else '-' }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ b.hall.name }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ b.user.full_name if b.user and b.user.full_name else (b.user.username if b.user else '-') }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ b.created_at_local.strftime('%d-%m-%Y') if b.created_at_local else '-' }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ b.cancelled_at.strftime('%d-%m-%Y %H:%M') if b.cancelled_at else '-' }}</td>
+                <td style="padding: 0.5rem; border-bottom: 1px solid var(--border);">{{ (b.cancellation_reason or '-')[:100] }}{% if (b.cancellation_reason or '')|length > 100 %}...{% endif %}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% endif %}
+</div>
+{% endblock %}

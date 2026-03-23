@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block title %}Pending Approvals - Admin{% endblock %}
+{% block content %}
+<div class="container page">
+    <h1>Pending Approvals</h1>
+    <p class="lead">Review and approve or reject booking requests.</p>
+    {% if not bookings %}
+    <p>No pending bookings.</p>
+    {% else %}
+    <div class="bookings-list">
+        {% for b in bookings %}
+        <div class="booking-card">
+            <div class="booking-header">
+                <strong>{{ b.hall.name }}</strong>
+                <span class="badge badge-pending">Pending</span>
+            </div>
+            <p><strong>Event:</strong> {{ b.booking_date.strftime('%d %b %Y') }} → {{ b.event_end_date.strftime('%d %b %Y') }} ({{ b.num_days }} day{{ 's' if b.num_days != 1 else '' }})</p>
+            <p class="muted"><strong>Booked on:</strong> {{ b.created_at_local.strftime('%d %b %Y') if b.created_at_local else '-' }}</p>
+            <p><strong>Department:</strong> {{ b.department }}</p>
+            <p><strong>Purpose:</strong> {{ b.purpose }}</p>
+            <p><strong>Faculty Name:</strong> {{ b.user.full_name if b.user and b.user.full_name else (b.user.username if b.user else '-') }}</p>
+            <p>Chairs: {{ b.chairs_required }} | Guest: {{ b.guest_chairs }} | Audio: {{ 'Yes' if b.audio_system else 'No' }} | Photo: {{ 'Yes' if b.photography else 'No' }}</p>
+            <div class="form-row" style="margin-top: 0.75rem; gap: 0.5rem; flex-wrap: wrap;">
+                <form method="post" action="{{ url_for('admin.approve_booking', booking_id=b.id) }}" style="display: inline;">
+                    <input type="text" name="admin_notes" placeholder="Approval notes (optional)" style="margin-right: 0.5rem;">
+                    <button type="submit" class="btn btn-primary btn-sm">Approve</button>
+                </form>
+                <form method="post" action="{{ url_for('admin.reject_booking', booking_id=b.id) }}" style="display: inline;" onsubmit="return confirm('Reject this booking?');">
+                    <input type="text" name="admin_notes" placeholder="Rejection reason (required)" required style="margin-right: 0.5rem;">
+                    <button type="submit" class="btn btn-danger btn-sm">Reject</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

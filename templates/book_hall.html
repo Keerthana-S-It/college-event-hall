@@ -1,0 +1,334 @@
+{% extends "base.html" %}
+{% block title %}Book {{ hall.name }} - EduManage{% endblock %}
+{% block content %}
+<div class="container page" data-hall-id="{{ hall.id }}" data-hall-capacity="{{ hall.capacity }}" data-availability-url="{{ url_for('booking.availability') }}" data-holiday-url="{{ url_for('booking.tn_holidays') }}">
+    <h1>Book {{ hall.name }}</h1>
+    <p class="lead">Capacity: {{ hall.capacity }} chairs</p>
+    <div class="availability-row" style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; flex-wrap: wrap;">
+        <button type="button" class="btn btn-secondary" id="btn-show-booked">Show already booked slots</button>
+    </div>
+    <div id="booked-popup" class="popup hidden">
+        <div class="popup-content">
+            <h3>Already booked slots</h3>
+            <div id="booked-slots-list"></div>
+            <button type="button" class="btn btn-primary" id="btn-close-popup">Close</button>
+        </div>
+    </div>
+    <form id="booking-form" method="post" action="{{ url_for('booking.book_hall', hall_id=hall.id) }}" class="booking-form">
+        {# Admin assignment to other staff removed; bookings belong to the logged-in user #}
+        <div class="form-group">
+            <label for="department">Select Department <span class="required">*</span></label>
+            <select id="department" name="department" required>
+                <option value="">-- Select department --</option>
+                <option value="Department of School of Commerce & International Business (SCIB)">Department of School of Commerce & International Business (SCIB)</option>
+                <option value="Department of Management">Department of Management</option>
+                <option value="Department of Communication - Visual & Mass">Department of Communication - Visual & Mass</option>
+                <option value="Department of Bio - Science">Department of Bio - Science</option>
+                <option value="Department of Computer Science">Department of Computer Science</option>
+                <option value="Department of English">Department of English</option>
+                <option value="Department of Psychology">Department of Psychology</option>
+                <option value="Department of Language">Department of Language</option>
+                <option value="Department of Physical Education">Department of Physical Education</option>
+                <option value="Department of In-House Journal">Department of In-House Journal</option>
+            </select>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label for="start_date">Start Date <span class="required">*</span></label>
+                <input type="date" id="start_date" name="start_date" required>
+            </div>
+            <div class="form-group">
+                <label for="end_date">End Date <span class="required">*</span></label>
+                <input type="date" id="end_date" name="end_date" required>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="num_days_display">Number of Days Required</label>
+            <input type="number" id="num_days_display" value="1" readonly>
+            <small>Auto-calculated from Start Date and End Date</small>
+        </div>
+        <div class="form-group">
+            <label for="purpose">Purpose of Booking <span class="required">*</span></label>
+            <textarea id="purpose" name="purpose" rows="4" required placeholder="Describe the purpose"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="chairs_required">Total Number of Chairs Required <span class="required">*</span></label>
+            <input type="number" id="chairs_required" name="chairs_required" min="0" max="{{ hall.capacity }}" required value="0">
+            <small>Must not exceed hall capacity ({{ hall.capacity }})</small>
+        </div>
+        <div class="form-group">
+            <label for="faculties_count">Total Number of Faculties (Staff) <span class="required">*</span></label>
+            <input type="number" id="faculties_count" name="faculties_count" min="0" required value="0">
+        </div>
+        <div class="form-group">
+            <label for="guest_chairs">Total Number of Guest Chairs Required <span class="required">*</span></label>
+            <input type="number" id="guest_chairs" name="guest_chairs" min="0" max="{{ hall.capacity }}" value="0">
+        </div>
+        <div class="form-group">
+            <label>Requirement of Audio System</label>
+            <select id="audio_system" name="audio_system">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </div>
+        <div class="form-group audio-dependent" id="mic-types-wrap">
+            <label>Number of Microphones Required (per type) <span class="required" id="mic-types-required">*</span></label>
+            <small>Enter quantity for each microphone type (mandatory if Audio System is Yes)</small>
+            <div class="mic-quantity-row" style="display: flex; flex-direction: column; gap: 0.5rem; margin-top: 0.5rem;">
+                <label class="mic-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="min-width: 120px;">Neck band mic</span>
+                    <input type="number" name="mic_neck_band" id="mic_neck_band" min="0" value="0" style="width: 80px;">
+                </label>
+                <label class="mic-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="min-width: 120px;">Hand mic</span>
+                    <input type="number" name="mic_hand" id="mic_hand" min="0" value="0" style="width: 80px;">
+                </label>
+                <label class="mic-row" style="display: flex; align-items: center; gap: 0.75rem;">
+                    <span style="min-width: 120px;">Fixed mic</span>
+                    <input type="number" name="mic_fixed" id="mic_fixed" min="0" value="0" style="width: 80px;">
+                </label>
+            </div>
+            <input type="hidden" id="microphones" name="microphones" value="0">
+            <input type="hidden" name="mic_types" id="mic_types_hidden" value="">
+        </div>
+        <div class="form-group">
+            <label>Photography required</label>
+            <select id="photography" name="photography">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Podium required</label>
+            <select id="podium_required" name="podium_required">
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+            </select>
+        </div>
+        <!-- Email-related fields removed; application no longer sends emails. -->
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">Send Booking Request</button>
+            <a href="{{ url_for('booking.dashboard') }}" class="btn btn-secondary">Cancel</a>
+        </div>
+    </form>
+</div>
+<script>
+(function() {
+    var rootEl = document.querySelector('.container.page');
+    var hallId = parseInt(rootEl.getAttribute('data-hall-id'), 10) || 0;
+    var capacity = parseInt(rootEl.getAttribute('data-hall-capacity'), 10) || 0;
+    var availabilityUrl = rootEl.getAttribute('data-availability-url') || '/booking/edumanage/availability';
+    var holidayUrl = rootEl.getAttribute('data-holiday-url') || '/booking/edumanage/tn-holidays';
+    function pad2(n){ return (n < 10 ? '0' : '') + n; }
+    function formatLocalDate(d){ return d.getFullYear() + '-' + pad2(d.getMonth()+1) + '-' + pad2(d.getDate()); }
+    function parseLocalDate(yyyyMMdd){
+        var parts = (yyyyMMdd || '').split('-');
+        if (parts.length !== 3) return null;
+        var y = parseInt(parts[0], 10), m = parseInt(parts[1], 10), day = parseInt(parts[2], 10);
+        if (!y || !m || !day) return null;
+        return new Date(y, m - 1, day);
+    }
+
+    var today = formatLocalDate(new Date());
+    var startDateEl = document.getElementById('start_date');
+    var endDateEl = document.getElementById('end_date');
+    startDateEl.setAttribute('min', today);
+    endDateEl.setAttribute('min', today);
+    startDateEl.value = today;
+    endDateEl.value = today;
+
+    function recalcDays(){
+        var s = parseLocalDate(startDateEl.value);
+        var e = parseLocalDate(endDateEl.value);
+        if (!s || !e) return;
+        if (e < s) {
+            endDateEl.value = startDateEl.value;
+            e = s;
+        }
+        var days = Math.floor((e - s) / (24*60*60*1000)) + 1;
+        document.getElementById('num_days_display').value = days;
+    }
+    startDateEl.addEventListener('change', function(){
+        endDateEl.setAttribute('min', startDateEl.value || today);
+        recalcDays();
+    });
+    endDateEl.addEventListener('change', recalcDays);
+    recalcDays();
+
+    var holidayCache = {};
+    function getYearHolidays(year){
+        if (holidayCache[year]) return Promise.resolve(holidayCache[year]);
+        return fetch(holidayUrl + '?year=' + year, { credentials: 'same-origin' })
+            .then(function(r){ return r.json(); })
+            .then(function(payload){
+                var data = (payload && payload.holidays) ? payload.holidays : {};
+                holidayCache[year] = data;
+                return data;
+            })
+            .catch(function(){
+                holidayCache[year] = {};
+                return {};
+            });
+    }
+    function parseYmd(ymd){
+        var p = (ymd || '').split('-');
+        if (p.length !== 3) return null;
+        var y = parseInt(p[0], 10), m = parseInt(p[1], 10), d = parseInt(p[2], 10);
+        if (!y || !m || !d) return null;
+        return new Date(y, m - 1, d);
+    }
+    function toYmd(d){
+        return d.getFullYear() + '-' + pad2(d.getMonth() + 1) + '-' + pad2(d.getDate());
+    }
+    function validateSingleDate(el){
+        var val = (el.value || '').trim();
+        if (!val) return Promise.resolve(true);
+        var y = parseInt(val.split('-')[0], 10);
+        return getYearHolidays(y).then(function(map){
+            if (map[val]) {
+                alert('Selected date is a Tamil Nadu leave day: ' + val + ' (' + map[val] + '). Please choose another date.');
+                el.value = '';
+                recalcDays();
+                return false;
+            }
+            return true;
+        });
+    }
+    function rangeHasLeaveDay(fromVal, toVal){
+        var s = parseYmd(fromVal), e = parseYmd(toVal || fromVal);
+        if (!s || !e || e < s) return Promise.resolve(null);
+        var years = {};
+        for (var d = new Date(s); d <= e; d.setDate(d.getDate() + 1)) years[d.getFullYear()] = true;
+        var yearList = Object.keys(years);
+        return Promise.all(yearList.map(function(y){ return getYearHolidays(parseInt(y, 10)); }))
+            .then(function(maps){
+                var merged = {};
+                maps.forEach(function(m){
+                    Object.keys(m || {}).forEach(function(k){ merged[k] = m[k]; });
+                });
+                for (var x = new Date(s); x <= e; x.setDate(x.getDate() + 1)) {
+                    var key = toYmd(x);
+                    if (merged[key]) return { date: key, name: merged[key] };
+                }
+                return null;
+            });
+    }
+    startDateEl.addEventListener('change', function(){ validateSingleDate(startDateEl); });
+    endDateEl.addEventListener('change', function(){ validateSingleDate(endDateEl); });
+
+    function setMicRequired() {
+        var audio = document.getElementById('audio_system').value === 'yes';
+        document.getElementById('mic-types-required').style.visibility = audio ? 'visible' : 'hidden';
+        document.getElementById('mic-types-wrap').style.display = audio ? 'block' : 'none';
+    }
+    document.getElementById('audio_system').addEventListener('change', setMicRequired);
+    setMicRequired();
+
+    document.getElementById('chairs_required').setAttribute('max', capacity);
+    document.getElementById('guest_chairs').setAttribute('max', capacity);
+
+    document.getElementById('btn-show-booked').addEventListener('click', function() {
+        recalcDays();
+        var from = startDateEl.value || today;
+        var to = endDateEl.value || from;
+        function fetchSlots(f, t){
+            var url = availabilityUrl + '?hall_id=' + hallId + '&from_date=' + f + '&to_date=' + t;
+            return fetch(url, { credentials: 'same-origin' }).then(function(r) {
+                if (!r.ok) throw new Error('Failed to load booked slots');
+                var ct = (r.headers.get('Content-Type') || '');
+                if (!ct.includes('application/json')) throw new Error('Please ensure you are logged in and try again.');
+                return r.json();
+            });
+        }
+        function addDays(yyyyMMdd, days){
+            var d = parseLocalDate(yyyyMMdd);
+            if (!d) return yyyyMMdd;
+            d.setDate(d.getDate() + days);
+            return formatLocalDate(d);
+        }
+
+        fetchSlots(from, to).then(function(data) {
+                var list = document.getElementById('booked-slots-list');
+                var slots = (data && data.booked_slots) ? data.booked_slots : [];
+                // If user hasn't selected a range (default today->today), show next 30 days to be helpful
+                if (slots.length === 0 && from === today && to === today) {
+                    var to30 = addDays(today, 30);
+                    return fetchSlots(today, to30).then(function(data2){
+                        return { slots: (data2 && data2.booked_slots) ? data2.booked_slots : [], label: 'Next 30 days' };
+                    });
+                }
+                return { slots: slots, label: 'Selected range' };
+            }).then(function(result){
+                var list = document.getElementById('booked-slots-list');
+                var slots = result.slots || [];
+                if (slots.length === 0) {
+                    list.innerHTML = '<p>No bookings found.</p>';
+                } else {
+                    function to12h(hhmm){
+                        var parts = (hhmm || '').split(':');
+                        var h = parseInt(parts[0] || '0', 10);
+                        var m = parts[1] || '00';
+                        var ampm = h >= 12 ? 'PM' : 'AM';
+                        var h12 = h % 12; if (h12 === 0) h12 = 12;
+                        return h12 + ':' + m + ' ' + ampm;
+                    }
+                    list.innerHTML = '<p class="muted">Showing: ' + (result.label || '') + '</p><ul>' + slots.map(function(s) {
+                        return '<li>' + s.date + (s.purpose ? ' — ' + s.purpose : '') + '</li>';
+                    }).join('') + '</ul>';
+                }
+                document.getElementById('booked-popup').classList.remove('hidden');
+            }).catch(function(){
+                document.getElementById('booked-slots-list').innerHTML = '<p>Unable to load booked slots. Please try again.</p>';
+                document.getElementById('booked-popup').classList.remove('hidden');
+            });
+    });
+    document.getElementById('btn-close-popup').addEventListener('click', function() {
+        document.getElementById('booked-popup').classList.add('hidden');
+    });
+    document.getElementById('booked-popup').addEventListener('click', function(e){
+        if (e.target === this) this.classList.add('hidden');
+    });
+
+    document.getElementById('booking-form').addEventListener('submit', function(e) {
+        var departmentValue = (document.getElementById('department').value || '').trim();
+        if (!departmentValue) {
+            e.preventDefault();
+            alert('Please select a department.');
+            return false;
+        }
+        e.preventDefault();
+        rangeHasLeaveDay(startDateEl.value, endDateEl.value || startDateEl.value).then(function(hit){
+            if (hit) {
+                alert('Booking cannot be made on leave day: ' + hit.date + ' (' + hit.name + '). Please change the date.');
+                return false;
+            }
+            var chairsReq = parseInt(document.getElementById('chairs_required').value, 10);
+            var guestChairs = parseInt(document.getElementById('guest_chairs').value, 10);
+            if (chairsReq > capacity || guestChairs > capacity) {
+                alert('Chairs must not exceed hall capacity (' + capacity + ').');
+                return false;
+            }
+            recalcDays();
+            var audio = document.getElementById('audio_system').value === 'yes';
+            if (audio) {
+                var n = parseInt(document.getElementById('mic_neck_band').value, 10) || 0;
+                var h = parseInt(document.getElementById('mic_hand').value, 10) || 0;
+                var f = parseInt(document.getElementById('mic_fixed').value, 10) || 0;
+                if (n + h + f <= 0) {
+                    alert('Please enter quantity for at least one microphone type.');
+                    return false;
+                }
+                var parts = [];
+                if (n > 0) parts.push('neck_band:' + n);
+                if (h > 0) parts.push('hand:' + h);
+                if (f > 0) parts.push('fixed:' + f);
+                document.getElementById('mic_types_hidden').value = parts.join(',');
+                document.getElementById('microphones').value = n + h + f;
+            }
+            e.target.submit();
+            return true;
+        });
+    });
+})();
+</script>
+{% endblock %}

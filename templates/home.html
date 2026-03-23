@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Home - Hall Reservation System{% endblock %}
+{% block content %}
+<div class="container page">
+    <div class="home-card">
+        <h1>
+            <span>Dr. G. R. Damodaran College of Science</span><br>
+            <span>(Autonomous)</span>
+        </h1>
+        <p class="lead">Hall Reservation System</p>
+        <div class="home-actions">
+            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">Login</a>
+        </div>
+        <p class="muted" style="margin-top: 1rem;"> Login is required to book event halls.</p>
+    </div>
+</div>
+{% endblock %}
+

@@ -1,0 +1,341 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - EduManage{% endblock %}
+
+{% block content %}
+<div class="container page">
+    <h1>Event Halls</h1>
+    <p class="lead">
+        Each hall has its own calendar. Only booked dates are highlighted;
+        click a highlighted day to view its slots.
+    </p>
+
+    <div class="hall-calendars">
+        {% for hall in halls %}
+        <section class="hall-calendar">
+
+            <div class="hall-calendar-top">
+                <div>
+                    <h2 class="hall-title">{{ hall.name }}</h2>
+                    <p class="muted">Capacity: {{ hall.capacity }} chairs</p>
+                </div>
+
+                <a href="{{ url_for('booking.book_hall', hall_id=hall.id) }}"
+                   class="btn btn-primary">
+                   Book
+                </a>
+            </div>
+
+            <div class="calendar-card"
+                 data-calendar-url="{{ url_for('booking.calendar_data') }}"
+                 data-hall-id="{{ hall.id }}"
+                 aria-label="Bookings calendar for {{ hall.name }}">
+
+                <header class="calendar-header">
+                    <button type="button" class="cal-nav cal-prev">&lt;</button>
+
+                    <div class="cal-header-center">
+                        <span class="cal-label"></span>
+
+                        <div class="cal-selects">
+                            <select class="cal-month"></select>
+                            <select class="cal-year"></select>
+                        </div>
+                    </div>
+
+                    <button type="button" class="cal-nav cal-next">&gt;</button>
+                </header>
+
+                <div class="calendar-grid">
+                    <div class="cal-day-name">Sun</div>
+                    <div class="cal-day-name">Mon</div>
+                    <div class="cal-day-name">Tue</div>
+                    <div class="cal-day-name">Wed</div>
+                    <div class="cal-day-name">Thu</div>
+                    <div class="cal-day-name">Fri</div>
+                    <div class="cal-day-name">Sat</div>
+                </div>
+
+                <div class="calendar-legend">
+                    <span class="legend-item">
+                        <span class="legend-box legend-booked"></span>
+                        Has bookings
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-box legend-sunday"></span>
+                        Sunday
+                    </span>
+                    <span class="legend-item">
+                        <span class="legend-box legend-gov-holiday"></span>
+                        Tamil Nadu Govt Holiday
+                    </span>
+                </div>
+
+                <div class="calendar-details cal-day-details">
+                    <p class="muted">
+                        Select a highlighted day to see its bookings.
+                    </p>
+                </div>
+
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+
+{% block scripts %}
+{{ super() }}
+
+<script>
+(function(){
+
+const monthNames=[
+'January','February','March','April','May','June',
+'July','August','September','October','November','December'
+];
+
+function pad2(n){
+return (n<10?'0':'')+n;
+}
+
+const now=new Date();
+const currentYear=now.getFullYear();
+const currentMonth=now.getMonth();
+const MIN_YEAR=2026;
+const MAX_YEAR=2090;
+
+function initCalendar(card){
+
+const grid=card.querySelector('.calendar-grid');
+const label=card.querySelector('.cal-label');
+const monthSelect=card.querySelector('.cal-month');
+const yearSelect=card.querySelector('.cal-year');
+const prevBtn=card.querySelector('.cal-prev');
+const nextBtn=card.querySelector('.cal-next');
+const details=card.querySelector('.cal-day-details');
+
+const dataUrl=card.dataset.calendarUrl;
+const hallId=card.dataset.hallId;
+
+function buildSelectors(){
+
+monthSelect.innerHTML='';
+for(let m=0;m<12;m++){
+
+const opt=document.createElement('option');
+opt.value=m;
+opt.textContent=monthNames[m];
+
+if(m===currentMonth)opt.selected=true;
+
+monthSelect.appendChild(opt);
+}
+
+yearSelect.innerHTML='';
+for(let y=MIN_YEAR;y<=MAX_YEAR;y++){
+
+const opt=document.createElement('option');
+opt.value=y;
+opt.textContent=y;
+
+if(y===currentYear)opt.selected=true;
+
+yearSelect.appendChild(opt);
+}
+
+}
+
+function renderDetails(dateStr,bookings){
+
+let html='<h3>Bookings on '+dateStr+'</h3>';
+html+='<ul class="cal-bookings-list">';
+
+bookings.forEach(function(b){
+
+html+='<li>';
+html+='<strong>'+(b.hall||'Hall')+'</strong>';
+
+html+=' <span class="badge badge-'+(b.status||'').toLowerCase()+'">';
+html+=b.status||'';
+html+='</span>';
+
+html+='<br><span class="muted">'+(b.purpose||'')+'</span>';
+
+html+='</li>';
+
+});
+
+html+='</ul>';
+
+details.innerHTML=html;
+
+}
+
+function renderHolidayDetails(dateStr,holidayName){
+details.innerHTML='<h3>'+dateStr+'</h3><p><strong>Tamil Nadu Govt Holiday:</strong> '+holidayName+'</p>';
+}
+
+function fetchAndRender(){
+
+const y=parseInt(yearSelect.value);
+const m=parseInt(monthSelect.value);
+
+label.textContent=monthNames[m]+' '+y;
+
+details.innerHTML='<p class="muted">Select a highlighted day to see its bookings.</p>';
+
+grid.innerHTML=`
+<div class="cal-day-name">Sun</div>
+<div class="cal-day-name">Mon</div>
+<div class="cal-day-name">Tue</div>
+<div class="cal-day-name">Wed</div>
+<div class="cal-day-name">Thu</div>
+<div class="cal-day-name">Fri</div>
+<div class="cal-day-name">Sat</div>
+`;
+
+fetch(dataUrl+'?year='+y+'&month='+(m+1)+'&hall_id='+hallId)
+
+.then(r=>r.json())
+
+.then(payload=>{
+
+const byDate=payload.bookings_by_date||{};
+const govHolidays=payload.gov_holidays||{};
+
+const firstDay=new Date(y,m,1);
+const startWeekday=firstDay.getDay();
+const daysInMonth=new Date(y,m+1,0).getDate();
+
+for(let i=0;i<startWeekday;i++){
+
+let empty=document.createElement('div');
+empty.className='cal-cell cal-empty';
+grid.appendChild(empty);
+
+}
+
+for(let d=1;d<=daysInMonth;d++){
+
+let date=y+'-'+pad2(m+1)+'-'+pad2(d);
+let dayOfWeek=(startWeekday+d-1)%7;
+
+let cell=document.createElement('button');
+
+cell.className='cal-cell';
+cell.textContent=d;
+
+cell.dataset.date=date;
+if(dayOfWeek===0){
+cell.classList.add('cal-sunday');
+if(!cell.title) cell.title='Sunday';
+}
+if(govHolidays[date]){
+cell.classList.add('cal-gov-holiday');
+cell.title=govHolidays[date];
+}
+
+if(byDate[date] && byDate[date].length){
+
+cell.classList.add('cal-has-booking');
+
+cell.addEventListener('click',function(){
+
+renderDetails(date,byDate[date]);
+
+});
+
+} else if(govHolidays[date]){
+cell.addEventListener('click',function(){
+renderHolidayDetails(date,govHolidays[date]);
+});
+}
+
+grid.appendChild(cell);
+
+}
+
+const totalCells=startWeekday+daysInMonth;
+const remainder=totalCells%7;
+
+if(remainder!==0){
+
+const blanks=7-remainder;
+
+for(let i=0;i<blanks;i++){
+
+let empty=document.createElement('div');
+empty.className='cal-cell cal-empty';
+grid.appendChild(empty);
+
+}
+
+}
+
+})
+
+.catch(function(){
+
+details.innerHTML='<p class="muted">Unable to load calendar data.</p>';
+
+});
+
+}
+
+monthSelect.addEventListener('change',fetchAndRender);
+yearSelect.addEventListener('change',fetchAndRender);
+
+prevBtn.addEventListener('click',function(){
+
+let m=parseInt(monthSelect.value);
+let y=parseInt(yearSelect.value);
+
+m--;
+
+if(m<0){
+m=11;
+y--;
+}
+
+monthSelect.value=m;
+yearSelect.value=y;
+
+fetchAndRender();
+
+});
+
+nextBtn.addEventListener('click',function(){
+
+let m=parseInt(monthSelect.value);
+let y=parseInt(yearSelect.value);
+
+m++;
+
+if(m>11){
+m=0;
+y++;
+}
+
+monthSelect.value=m;
+yearSelect.value=y;
+
+fetchAndRender();
+
+});
+
+buildSelectors();
+// If currentYear isn't in the allowed range, clamp to the nearest boundary.
+if(currentYear<MIN_YEAR)yearSelect.value=MIN_YEAR;
+else if(currentYear>MAX_YEAR)yearSelect.value=MAX_YEAR;
+fetchAndRender();
+
+}
+
+document.querySelectorAll('.calendar-card').forEach(initCalendar);
+
+})();
+</script>
+
+{% endblock %}

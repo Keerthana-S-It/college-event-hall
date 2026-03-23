@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Hall Usage Reports - Admin{% endblock %}
+{% block content %}
+<div class="container page">
+    <h1>Hall Usage Reports</h1>
+    <p class="lead">Generate hall usage reports by date range. Export to PDF or Excel.</p>
+    <form method="get" action="{{ url_for('admin.reports_monthly') }}" class="form-row" style="align-items: flex-end; gap: 1rem; flex-wrap: wrap;">
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="from_date">From Date <span class="required">*</span></label>
+            <input type="date" id="from_date" name="from_date" required value="{{ from_date or '' }}">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="to_date">To Date <span class="required">*</span></label>
+            <input type="date" id="to_date" name="to_date" required value="{{ to_date or '' }}">
+        </div>
+        <div class="form-group" style="margin-bottom: 0;">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="all" selected>All</option>
+                <option value="approved">Approved</option>
+                <option value="pending">Pending</option>
+                <option value="rejected">Rejected</option>
+                <option value="cancelled">Cancelled</option>
+            </select>
+        </div>
+        <input type="hidden" name="format" value="html">
+        <button type="submit" class="btn btn-primary">View Report</button>
+        <button type="submit" formaction="{{ url_for('admin.reports_monthly') }}" formtarget="_blank"
+                onclick="this.form.format.value='pdf'; this.form.submit(); this.form.format.value='html'; return false;"
+                class="btn btn-secondary">Export PDF</button>
+        <button type="submit" formaction="{{ url_for('admin.reports_monthly') }}" formtarget="_blank"
+                onclick="this.form.format.value='excel'; this.form.submit(); this.form.format.value='html'; return false;"
+                class="btn btn-secondary">Export Excel</button>
+    </form>
+    <p class="muted" style="margin-top: 1rem;">Select From Date and To Date to filter bookings. View Report for on-screen preview. Export buttons download PDF or Excel directly.</p>
+</div>
+<script>
+(function(){
+    var d = new Date();
+    var pad = function(n) { return (n < 10 ? '0' : '') + n; };
+    var today = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    var firstDay = d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-01';
+    var fromEl = document.getElementById('from_date');
+    var toEl = document.getElementById('to_date');
+    if (!fromEl.value) fromEl.value = firstDay;
+    if (!toEl.value) toEl.value = today;
+})();
+</script>
+{% endblock %}

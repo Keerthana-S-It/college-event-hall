@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Classes - Admin{% endblock %}
+{% block content %}
+<div class="container page">
+  <h1>Classes (per Hall & Block)</h1>
+  <p class="lead">Add classes for each hall under IT/IM/SCIB/MAIN blocks. Staff will see these while booking.</p>
+
+  <section class="card" style="margin-bottom: 1.5rem;">
+    <h2>Add Class</h2>
+    <form method="post" class="form-grid">
+      <input type="hidden" name="mode" id="mode" value="years">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="block_id">Block<span class="required">*</span></label>
+          <select id="block_id" name="block_id" required>
+            {% for b in blocks %}
+              <option value="{{ b.id }}" {% if b.id == selected_block_id %}selected{% endif %}>{{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="base_name">Course / Class Name<span class="required">*</span></label>
+          <input id="base_name" name="base_name" type="text" required placeholder="e.g. BSc CS / BCA / MSc IT">
+          <small>If you choose UG/PG below, years will be created automatically.</small>
+        </div>
+        <div class="form-group">
+          <label for="program">Program</label>
+          <select id="program" name="program">
+            <option value="ug" selected>Under Graduation (3 years)</option>
+            <option value="pg">Post Graduation (2 years)</option>
+            <option value="single">Single (no years)</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary">Add</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Existing Classes</h2>
+    <form method="get" class="form-row" style="align-items: flex-end; gap: 1rem; flex-wrap: wrap; margin-bottom: 1rem;">
+      <div class="form-group" style="margin-bottom: 0;">
+        <label for="filter_block">Block</label>
+        <select id="filter_block" name="block_id">
+          {% for b in blocks %}
+            <option value="{{ b.id }}" {% if b.id == selected_block_id %}selected{% endif %}>{{ b.name }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit" class="btn btn-secondary btn-sm">View</button>
+    </form>
+
+    {% if not classes %}
+      <p>No classes found for this hall & block.</p>
+    {% else %}
+      <table class="table">
+        <thead>
+          <tr>
+            <th>Class</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for c in classes %}
+          <tr>
+            <td>{{ c.name }}</td>
+            <td>
+              <form method="post" action="{{ url_for('admin.delete_class', class_id=c.id) }}"
+                    onsubmit="return confirm('Delete this class?');" style="display:inline;">
+                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+              </form>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% endif %}
+  </section>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+(function(){
+  var program = document.getElementById('program');
+  var mode = document.getElementById('mode');
+  function sync(){
+    if(program.value === 'single'){
+      mode.value = 'single';
+    } else {
+      mode.value = 'years';
+    }
+  }
+  program.addEventListener('change', sync);
+  sync();
+})();
+</script>
+{% endblock %}
+
