@@ -179,9 +179,11 @@ body {
     letter-spacing: 0.08em;
 }
 .login-heading-line1 {
+    font-size: 28px;
     font-weight: 700;
 }
 .login-heading-line2 {
+    font-size: 22px;
     font-weight: 600;
 }
 .subtitle {
