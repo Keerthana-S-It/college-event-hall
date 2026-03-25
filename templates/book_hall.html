@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Book {{ hall.name }} - EduManage{% endblock %}
+{% block title %}Book {{ hall.name }} - Grdcs hall book{% endblock %}
 {% block content %}
 <div class="container page" data-hall-id="{{ hall.id }}" data-hall-capacity="{{ hall.capacity }}" data-availability-url="{{ url_for('booking.availability') }}" data-holiday-url="{{ url_for('booking.tn_holidays') }}">
     <h1>Book {{ hall.name }}</h1>
