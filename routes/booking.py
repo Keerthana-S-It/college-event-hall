@@ -79,12 +79,12 @@ def book_hall(hall_id):
         if not department:
             errors.append('Department is mandatory.')
         try:
-            start_date = datetime.strptime(start_date_s, '%Y-%m-%d').date()
+            start_date = datetime.strptime(start_date_s, '%d-%m-%Y').date()
         except Exception:
             errors.append('Invalid start date.')
             start_date = None
         try:
-            end_date = datetime.strptime(end_date_s, '%Y-%m-%d').date()
+            end_date = datetime.strptime(end_date_s, '%d-%m-%Y').date()
         except Exception:
             errors.append('Invalid end date.')
             end_date = None
@@ -253,10 +253,10 @@ def availability():
     if not hall_id or not from_date:
         return jsonify({'booked_slots': []})
     try:
-        from_d = datetime.strptime(from_date, '%Y-%m-%d').date()
+        from_d = datetime.strptime(from_date, '%d-%m-%Y').date()
     except Exception:
         return jsonify({'booked_slots': []})
-    to_d = datetime.strptime(to_date, '%Y-%m-%d').date() if to_date else from_d
+    to_d = datetime.strptime(to_date, '%d-%m-%Y').date() if to_date else from_d
     # Include approved and pending (approved blocks conflicts; show both for availability)
     slots = Booking.query.filter(
         Booking.hall_id == hall_id,
@@ -370,8 +370,8 @@ def check_availability():
     if not hall_id or not from_date or not start_time_s or not end_time_s:
         return jsonify({'available': True, 'message': 'Incomplete data'})
     try:
-        from_d = datetime.strptime(from_date, '%Y-%m-%d').date()
-        to_d = datetime.strptime(to_date or from_date, '%Y-%m-%d').date()
+        from_d = datetime.strptime(from_date, '%d-%m-%Y').date()
+        to_d = datetime.strptime(to_date or from_date, '%d-%m-%YS').date()
         start_time = datetime.strptime(start_time_s, '%H:%M').time()
         end_time = datetime.strptime(end_time_s, '%H:%M').time()
     except Exception:
