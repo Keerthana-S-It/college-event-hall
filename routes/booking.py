@@ -6,6 +6,24 @@ import holidays
 
 booking_bp = Blueprint('booking', __name__)
 
+def _parse_date_flexible(s: str):
+    """Accept both HTML date input (YYYY-MM-DD) and DD-MM-YYYY."""
+    s = (s or "").strip()
+    if not s:
+        return None
+    for fmt in ("%Y-%m-%d", "%d-%m-%Y"):
+        try:
+            return datetime.strptime(s, fmt).date()
+        except Exception:
+            continue
+    return None
+
+def _fmt_ddmmyyyy(d):
+    try:
+        return d.strftime("%d-%m-%Y") if d else ""
+    except Exception:
+        return ""
+
 def login_required(f):
     @wraps(f)
     def wrapped(*args, **kwargs):
@@ -78,16 +96,12 @@ def book_hall(hall_id):
         errors = []
         if not department:
             errors.append('Department is mandatory.')
-        try:
-            start_date = datetime.strptime(start_date_s, '%d-%m-%Y').date()
-        except Exception:
+        start_date = _parse_date_flexible(start_date_s)
+        if not start_date:
             errors.append('Invalid start date.')
-            start_date = None
-        try:
-            end_date = datetime.strptime(end_date_s, '%d-%m-%Y').date()
-        except Exception:
+        end_date = _parse_date_flexible(end_date_s)
+        if not end_date:
             errors.append('Invalid end date.')
-            end_date = None
 
         if start_date and start_date < date.today():
             errors.append('Past dates are not allowed.')
@@ -105,7 +119,7 @@ def book_hall(hall_id):
                     d = start_date + timedelta(days=i)
                     hmap = holiday_maps.get(d.year)
                     if hmap and d in hmap:
-                        errors.append(f'Booking is not allowed on leave day: {d.isoformat()} ({hmap.get(d)}).')
+                        errors.append(f'Booking is not allowed on leave day: {_fmt_ddmmyyyy(d)} ({hmap.get(d)}).')
                         break
         else:
             num_days = 0
@@ -252,11 +266,12 @@ def availability():
     to_date = request.args.get('to_date')
     if not hall_id or not from_date:
         return jsonify({'booked_slots': []})
-    try:
-        from_d = datetime.strptime(from_date, '%d-%m-%Y').date()
-    except Exception:
+    from_d = _parse_date_flexible(from_date)
+    if not from_d:
         return jsonify({'booked_slots': []})
-    to_d = datetime.strptime(to_date, '%d-%m-%Y').date() if to_date else from_d
+    to_d = _parse_date_flexible(to_date) if to_date else from_d
+    if not to_d:
+        to_d = from_d
     # Include approved and pending (approved blocks conflicts; show both for availability)
     slots = Booking.query.filter(
         Booking.hall_id == hall_id,
@@ -370,8 +385,10 @@ def check_availability():
     if not hall_id or not from_date or not start_time_s or not end_time_s:
         return jsonify({'available': True, 'message': 'Incomplete data'})
     try:
-        from_d = datetime.strptime(from_date, '%d-%m-%Y').date()
-        to_d = datetime.strptime(to_date or from_date, '%d-%m-%YS').date()
+        from_d = _parse_date_flexible(from_date)
+        to_d = _parse_date_flexible(to_date or from_date)
+        if not from_d or not to_d:
+            raise ValueError("Invalid date")
         start_time = datetime.strptime(start_time_s, '%H:%M').time()
         end_time = datetime.strptime(end_time_s, '%H:%M').time()
     except Exception:

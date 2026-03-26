@@ -1,8 +1,8 @@
 {% extends "base.html" %}
-{% block title %}Report {{ from_date }} to {{ to_date }} - Admin{% endblock %}
+{% block title %}Report {{ from_date_display or from_date }} to {{ to_date_display or to_date }} - Admin{% endblock %}
 {% block content %}
 <div class="container page">
-    <h1>Hall Usage Report – {{ from_date }} to {{ to_date }}</h1>
+    <h1>Hall Usage Report – {{ from_date_display or from_date }} to {{ to_date_display or to_date }}</h1>
     <p class="lead">
         <a href="{{ url_for('admin.reports') }}">← Back to Reports</a>
         |

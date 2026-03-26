@@ -26,6 +26,12 @@ def admin_required(f):
         return f(*args, **kwargs)
     return wrapped
 
+def _fmt_ddmmyyyy(d):
+    try:
+        return d.strftime("%d-%m-%Y") if d else ""
+    except Exception:
+        return str(d) if d else ""
+
 
 @admin_bp.route('/pending')
 @login_required
@@ -49,7 +55,7 @@ def approve_booking(booking_id):
     # Notify the booking owner
     db.session.add(Notification(
         user_id=b.user_id,
-        message=f'Your booking for "{b.hall.name if b.hall else "Hall"}" on {b.booking_date} was approved.'
+        message=f'Your booking for "{b.hall.name if b.hall else "Hall"}" on {_fmt_ddmmyyyy(b.booking_date)} was approved.'
     ))
     db.session.commit()
     flash('Booking approved.', 'success')
@@ -73,7 +79,7 @@ def reject_booking(booking_id):
     # Notify the booking owner
     db.session.add(Notification(
         user_id=b.user_id,
-        message=f'Your booking for "{b.hall.name if b.hall else "Hall"}" on {b.booking_date} was rejected. Reason: {reason}'
+        message=f'Your booking for "{b.hall.name if b.hall else "Hall"}" on {_fmt_ddmmyyyy(b.booking_date)} was rejected. Reason: {reason}'
     ))
     db.session.commit()
     flash('Booking rejected.', 'success')
@@ -276,6 +282,8 @@ def reports_monthly():
         bookings=bookings,
         from_date=from_date_s,
         to_date=to_date_s,
+        from_date_display=_fmt_ddmmyyyy(start),
+        to_date_display=_fmt_ddmmyyyy(end),
         status=status,
         pagination=bookings_pagination,
         counts=counts,
@@ -299,8 +307,10 @@ def _export_excel(bookings, start_date, end_date, counts=None):
     counts = counts or {}
     wb = Workbook()
     ws = wb.active
-    label = f'{start_date} to {end_date}' if start_date != end_date else str(start_date)
-    ws.title = label[:31]
+    start_str = _fmt_ddmmyyyy(start_date) or str(start_date)
+    end_str = _fmt_ddmmyyyy(end_date) or str(end_date)
+    label = f'{start_str} to {end_str}' if start_date != end_date else start_str
+    ws.title = (label or "Report")[:31]
     ws['A1'] = f'Hall Usage Report - {label}'
     ws['A1'].font = Font(bold=True, size=14)
     headers = ['S.No', 'Event From', 'Event To', 'Hall', 'Department', 'Purpose', 'Status', 'Faculty Name', 'Booked On']
@@ -326,7 +336,7 @@ def _export_excel(bookings, start_date, end_date, counts=None):
     buf = BytesIO()
     wb.save(buf)
     buf.seek(0)
-    fn = f'hall_usage_{start_date}_to_{end_date}.xlsx'.replace(' ', '_')
+    fn = f'reports_{start_str}_to_{end_str}.xlsx'.replace(' ', '_')
     return send_file(buf, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
                      download_name=fn, as_attachment=True)
 
@@ -450,8 +460,10 @@ def _export_pdf(bookings, start_date, end_date, counts=None):
         story.append(Paragraph(summary, ParagraphStyle(name="summary", parent=styles["Normal"], fontSize=9, fontName="Helvetica-Bold")))
     doc.build(story)
     buf.seek(0)
-    fn = f'hall_usage_{start_date}_to_{end_date}.pdf'.replace(' ', '_')
-    return send_file(buf, mimetype='application/pdf',
-                     download_name=fn, as_attachment=True)
+    # Inline viewing in browser + meaningful filename (avoid "anonymous")
+    fn = f'reports_{_fmt_date(start_date)}_to_{_fmt_date(end_date)}.pdf'.replace(' ', '_')
+    resp = send_file(buf, mimetype='application/pdf', download_name=fn, as_attachment=False)
+    resp.headers["Content-Disposition"] = f'inline; filename="{fn}"'
+    return resp
 
 
