@@ -1,6 +1,6 @@
-# EduManage – Event Hall Booking
+# Dr.GRDCS– Hall Reservation System
 
-Event hall booking system with login, hall selection, and admin keyword management.
+Event hall booking system with login, hall selection, and admin updating management.
 
 ## Features
 
